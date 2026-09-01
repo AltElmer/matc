@@ -19,6 +19,12 @@ IF(MATC_STATIC_CLI)
   ADD_LIBRARY(matc STATIC ${matc_SRCS})
 ELSE()
   ADD_LIBRARY(matc SHARED ${matc_SRCS})
+  # A Windows DLL exports nothing unless the sources say so, and these carry no
+  # __declspec(dllexport). Without exports no import library is produced and
+  # linking the executable fails with LNK1181 on matc.lib. Export everything,
+  # which is what the ELF and Mach-O builds already do by default. Ignored on
+  # platforms where it does not apply.
+  SET_TARGET_PROPERTIES(matc PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 ENDIF()
 
 # Link libm only where it is a separate library. It is on glibc and the BSDs,
