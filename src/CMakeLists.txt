@@ -21,7 +21,16 @@ ELSE()
   ADD_LIBRARY(matc SHARED ${matc_SRCS})
 ENDIF()
 
-TARGET_LINK_LIBRARIES(matc m)
+# Link libm only where it is a separate library. It is on glibc and the BSDs,
+# it is not on MSVC or on macOS, where the math functions live in the C
+# runtime, and linking a nonexistent "m" fails with LNK1181 there. Detect it
+# rather than testing the compiler name, so a toolchain nobody here has tried
+# still gets the right answer.
+INCLUDE(CheckLibraryExists)
+CHECK_LIBRARY_EXISTS(m sin "" MATC_HAVE_LIBM)
+IF(MATC_HAVE_LIBM)
+  TARGET_LINK_LIBRARIES(matc m)
+ENDIF()
 
 IF(WITH_OpenMP)
   target_compile_definitions(matc PUBLIC MATC_OPENMP)
@@ -30,22 +39,19 @@ ENDIF()
 ADD_EXECUTABLE(Matc_bin main.c)
 TARGET_LINK_LIBRARIES(Matc_bin matc)
 
-IF(MATC_STATIC_CLI AND NOT APPLE)
-  # Apple does not ship static system libraries, so -static cannot work there;
-  # a macOS binary linking only libSystem is portable across macOS versions
-  # anyway.
-  SET_TARGET_PROPERTIES(Matc_bin PROPERTIES LINK_FLAGS "-static")
+IF(MATC_STATIC_CLI)
+  IF(MSVC)
+    # MSVC has no -static; the equivalent is linking the CRT statically.
+    SET_PROPERTY(TARGET matc PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+    SET_PROPERTY(TARGET Matc_bin PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+  ELSEIF(NOT APPLE)
+    # Apple ships no static system libraries, so -static cannot work there. A
+    # macOS binary linking only libSystem is portable across macOS versions
+    # anyway, so there is nothing to do for that case.
+    SET_TARGET_PROPERTIES(Matc_bin PROPERTIES LINK_FLAGS "-static")
+  ENDIF()
 ENDIF()
 
-# MATC is not buildable with MSVC: src/elmer/matc.h includes <unistd.h> and
-# <sys/types.h> unconditionally, and MSVC has no unistd.h. Making it work
-# would be a porting exercise rather than a build tweak, so say so plainly
-# instead of failing later with a confusing missing-header error.
-IF(MSVC)
-  MESSAGE(FATAL_ERROR
-    "MATC requires a POSIX-like C library and does not build with MSVC. "
-    "On Windows use mingw-w64, for example through MSYS2.")
-ENDIF()
 
 SET_TARGET_PROPERTIES(Matc_bin PROPERTIES OUTPUT_NAME matc)
 IF(WIN32)

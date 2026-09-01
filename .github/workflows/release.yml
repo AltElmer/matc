@@ -37,34 +37,18 @@ jobs:
             os: macos-14
           - target: macos-x86_64
             os: macos-15-intel
-          # Windows goes through mingw-w64: MATC needs <unistd.h>, which MSVC
-          # does not provide.
+          # MSVC with a statically linked CRT, so the binary needs no
+          # redistributable installed.
           - target: windows-x86_64
             os: windows-2022
-            mingw: true
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: set up mingw
-        if: matrix.mingw
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
-
       - name: build
-        if: '!matrix.mingw'
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMATC_STATIC_CLI=ON
           cmake --build build --config Release
-
-      - name: build (mingw)
-        if: matrix.mingw
-        shell: msys2 {0}
-        run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DMATC_STATIC_CLI=ON
-          cmake --build build
 
       - name: verify the binary runs and is self-contained
         shell: bash
