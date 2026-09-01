@@ -26,8 +26,9 @@ jobs:
             os: macos-14
           - name: macos-x86_64 (clang)
             os: macos-15-intel
-          - name: windows-x86_64 (msvc)
-            os: windows-2022
+          # No MSVC entry: src/elmer/matc.h includes <unistd.h>, which MSVC
+          # does not have, so Windows builds go through mingw-w64. The CMake
+          # says the same thing with a clear error if anyone tries.
           - name: windows-x86_64 (mingw)
             os: windows-2022
             mingw: true

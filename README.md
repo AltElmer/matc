@@ -49,7 +49,9 @@ f(t) = t^2 + 1            # user defined function
 
 ## Building
 
-Requires CMake 3.12 or newer and a C compiler.
+Requires CMake 3.12 or newer and a C compiler. On Windows that means mingw-w64, most easily through [MSYS2](https://www.msys2.org/): MATC includes `<unistd.h>` and MSVC does not provide it, so an MSVC build stops with a message saying as much rather than failing later on a missing header.
+
+The code predates C23 and relies on `()` in a function pointer type meaning unspecified arguments rather than none, so it is compiled as C99. Compilers defaulting to C23, such as GCC 15 and newer, reject it otherwise.
 
 ```
 cmake -S . -B build
