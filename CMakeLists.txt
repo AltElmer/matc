@@ -13,6 +13,16 @@ IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
   ENDIF()
 
+  # The same standard the Elmer top level build selects. It matters here: the
+  # callback type in com_init() is declared "VARIABLE *(*)()", meaning
+  # unspecified arguments, and the functions passed to it genuinely have
+  # different signatures. C23 redefines () as (void), so compilers defaulting
+  # to it, such as GCC 15 and newer, reject every one of those calls with
+  # "incompatible pointer type". Compiling as C99 keeps the meaning the code
+  # was written against instead of suppressing the diagnostic.
+  SET(CMAKE_C_STANDARD 99)
+  SET(CMAKE_C_STANDARD_REQUIRED ON)
+
   # Normally provided by the Elmer top level build.
   IF(NOT DEFINED ELMER_INSTALL_LIB_DIR)
     SET(ELMER_INSTALL_LIB_DIR "lib")

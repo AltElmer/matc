@@ -30,15 +30,21 @@ ENDIF()
 ADD_EXECUTABLE(Matc_bin main.c)
 TARGET_LINK_LIBRARIES(Matc_bin matc)
 
-IF(MATC_STATIC_CLI AND NOT APPLE AND NOT MSVC)
+IF(MATC_STATIC_CLI AND NOT APPLE)
   # Apple does not ship static system libraries, so -static cannot work there;
   # a macOS binary linking only libSystem is portable across macOS versions
-  # anyway. MSVC uses /MT instead, set below.
+  # anyway.
   SET_TARGET_PROPERTIES(Matc_bin PROPERTIES LINK_FLAGS "-static")
 ENDIF()
-IF(MATC_STATIC_CLI AND MSVC)
-  SET_PROPERTY(TARGET Matc_bin PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
-  SET_PROPERTY(TARGET matc PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+
+# MATC is not buildable with MSVC: src/elmer/matc.h includes <unistd.h> and
+# <sys/types.h> unconditionally, and MSVC has no unistd.h. Making it work
+# would be a porting exercise rather than a build tweak, so say so plainly
+# instead of failing later with a confusing missing-header error.
+IF(MSVC)
+  MESSAGE(FATAL_ERROR
+    "MATC requires a POSIX-like C library and does not build with MSVC. "
+    "On Windows use mingw-w64, for example through MSYS2.")
 ENDIF()
 
 SET_TARGET_PROPERTIES(Matc_bin PROPERTIES OUTPUT_NAME matc)
