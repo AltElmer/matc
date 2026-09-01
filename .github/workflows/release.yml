@@ -63,12 +63,23 @@ jobs:
           # And it must not depend on a MATC shared library, which is the whole
           # point of the static build. A dynamic libmatc here would still pass
           # the test above on the build machine and fail on a user's.
+          #
+          # Match "libmatc" rather than "matc", and drop the first line of
+          # otool's output, which is the path of the file being examined. The
+          # executable is itself called matc, so a looser pattern matches its
+          # own name and reports a correctly static binary as broken.
+          deps=""
           case "${{ runner.os }}" in
-            Linux)   ldd "$exe" 2>&1 | grep -i matc  && { echo "::error::links libmatc"; exit 1; } || true ;;
-            macOS)   otool -L "$exe" | grep -i matc  && { echo "::error::links libmatc"; exit 1; } || true ;;
-            Windows) ;;
+            Linux)   deps=$(ldd "$exe" 2>&1 || true) ;;
+            macOS)   deps=$(otool -L "$exe" | tail -n +2) ;;
+            Windows) deps="" ;;
           esac
-          echo "ok"
+          echo "$deps"
+          if echo "$deps" | grep -qi 'libmatc'; then
+            echo "::error::the binary links a MATC shared library, so it is not self-contained"
+            exit 1
+          fi
+          echo "ok: no libmatc dependency"
 
       - name: package
         shell: bash
