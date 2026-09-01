@@ -1,0 +1,95 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64 (gcc)
+            os: ubuntu-24.04
+          - name: linux-arm64 (gcc)
+            os: ubuntu-24.04-arm
+          - name: macos-arm64 (clang)
+            os: macos-14
+          - name: macos-x86_64 (clang)
+            os: macos-15-intel
+          - name: windows-x86_64 (msvc)
+            os: windows-2022
+          - name: windows-x86_64 (mingw)
+            os: windows-2022
+            mingw: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up mingw
+        if: matrix.mingw
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
+
+      - name: build
+        if: '!matrix.mingw'
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: build (mingw)
+        if: matrix.mingw
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      # matc reads expressions from stdin and ignores argv, so it is driven by
+      # piping input. "quit" is what ends the session; without it the process
+      # waits on stdin forever, which is how a naive smoke test hangs a runner.
+      - name: smoke test
+        if: '!matrix.mingw'
+        shell: bash
+        run: |
+          exe=$(find build -name 'matc' -o -name 'matc.exe' | head -1)
+          echo "using: $exe"
+          out=$(printf '6*7\nquit\n' | "$exe")
+          echo "$out"
+          echo "$out" | grep -q 42 || { echo "::error::expected 42 in output"; exit 1; }
+
+      - name: smoke test (mingw)
+        if: matrix.mingw
+        shell: msys2 {0}
+        run: |
+          exe=$(find build -name 'matc.exe' | head -1)
+          out=$(printf '6*7\nquit\n' | "$exe")
+          echo "$out"
+          echo "$out" | grep -q 42 || { echo "::error::expected 42 in output"; exit 1; }
+
+  static-cli:
+    name: self-contained binary (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+    steps:
+      - uses: actions/checkout@v4
+      - name: build with MATC_STATIC_CLI
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMATC_STATIC_CLI=ON
+          cmake --build build
+      - name: it still runs
+        shell: bash
+        run: printf '6*7\nquit\n' | ./build/src/matc | grep -q 42
