@@ -20,10 +20,8 @@ There is no single binary that runs everywhere. Native code is built per operati
 
 ```
 $ matc
-MATC M.1.0
-...
 1 + 2
-3
+         3
 quit
 ```
 
@@ -31,21 +29,51 @@ Because it reads standard input, it also works in a pipeline, which is the usual
 
 ```
 $ printf '2^10\nquit\n' | matc
-1024
+  1.02e+03
 ```
 
-Some of what the language offers:
+Note the default output format: `2^10` prints as `1.02e+03`, not `1024`. `format(n)` sets the number of digits, so `format(12)` before the same expression prints `1024`.
+
+Assignments are silent; an expression on its own prints its value.
 
 ```
+2^10
+  1.02e+03
+
 x = 3
-y = vector(0:10)          # 0 1 2 ... 10
-A = matrix(3, 3)          # a 3 by 3 matrix
-b = A * x
+y = vector(0, 10, 1)      # 0 1 2 ... 10, as start, end, increment
+A = zeros(2, 3)
+size(A)
+         2         3
+
+det(eye(3))
+         1
+
 sin(pi/4)
-f(t) = t^2 + 1            # user defined function
+     0.707
 ```
 
-`help` lists the built-in functions, and `help name` describes one of them.
+Functions are introduced with `function`, and return by assigning to an underscore followed by the function name:
+
+```
+function sq(t)
+{
+  _sq = t^2 + 1;
+}
+
+sq(4)
+        17
+```
+
+`help` on its own lists the built-in functions. `help("name")`, with the quotes, describes one:
+
+```
+help("vector")
+r=vector(start,end,inc)
+Return vector of values going from start to end by inc.
+```
+
+The bundled reference in [`doc/`](doc/) documents the language in full: operators, control flow, the `import` and `export` statements for function scope, and the file, matrix and plotting builtins.
 
 ## Building
 
