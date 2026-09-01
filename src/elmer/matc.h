@@ -38,7 +38,14 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
-#include <unistd.h>
+/* MATC uses exactly two things from <unistd.h>: unlink() and isatty().
+   MSVC has no <unistd.h>, but its <io.h> declares both, so no substitute
+   header is needed. <sys/types.h> exists on MSVC and is included either way. */
+#ifdef _MSC_VER
+#  include <io.h>
+#else
+#  include <unistd.h>
+#endif
 #include <sys/types.h>
 
 

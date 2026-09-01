@@ -26,9 +26,11 @@ jobs:
             os: macos-14
           - name: macos-x86_64 (clang)
             os: macos-15-intel
-          # No MSVC entry: src/elmer/matc.h includes <unistd.h>, which MSVC
-          # does not have, so Windows builds go through mingw-w64. The CMake
-          # says the same thing with a clear error if anyone tries.
+          - name: windows-x86_64 (msvc)
+            os: windows-2022
+          - name: windows-x86_64 (clang-cl)
+            os: windows-2022
+            cmake-extra: -T ClangCL
           - name: windows-x86_64 (mingw)
             os: windows-2022
             mingw: true
@@ -46,7 +48,7 @@ jobs:
       - name: build
         if: '!matrix.mingw'
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake-extra }}
           cmake --build build --config Release
 
       - name: build (mingw)
@@ -84,13 +86,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-14]
+        os: [ubuntu-24.04, macos-14, windows-2022]
     steps:
       - uses: actions/checkout@v4
       - name: build with MATC_STATIC_CLI
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMATC_STATIC_CLI=ON
-          cmake --build build
+          cmake --build build --config Release
       - name: it still runs
         shell: bash
-        run: printf '6*7\nquit\n' | ./build/src/matc | grep -q 42
+        run: |
+          exe=$(find build -name 'matc' -type f -o -name 'matc.exe' -type f | head -1)
+          printf '6*7\nquit\n' | "$exe" | grep -q 42
