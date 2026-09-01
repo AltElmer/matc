@@ -1,0 +1,108 @@
+name: release
+
+# Builds a self-contained matc for each supported platform and attaches the
+# archives to the release for the tag that triggered it.
+#
+# There is no single binary that runs everywhere: this is native code, so one
+# artifact is produced per operating system and CPU architecture. On Linux and
+# Windows the C runtime is linked in, so the binary has no external
+# dependencies. macOS does not ship static system libraries, so those binaries
+# link libSystem, which is present on every macOS.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to build and attach to
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x86_64
+            os: ubuntu-24.04
+          - target: linux-arm64
+            os: ubuntu-24.04-arm
+          - target: macos-arm64
+            os: macos-14
+          - target: macos-x86_64
+            os: macos-15-intel
+          - target: windows-x86_64
+            os: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMATC_STATIC_CLI=ON
+          cmake --build build --config Release
+
+      - name: verify the binary runs and is self-contained
+        shell: bash
+        run: |
+          exe=$(find build -name 'matc' -type f -o -name 'matc.exe' -type f | head -1)
+          echo "binary: $exe"
+
+          # It must actually compute, not merely exist.
+          out=$(printf '6*7\nquit\n' | "$exe")
+          echo "$out" | grep -q 42 || { echo "::error::binary did not evaluate 6*7"; exit 1; }
+
+          # And it must not depend on a MATC shared library, which is the whole
+          # point of the static build. A dynamic libmatc here would still pass
+          # the test above on the build machine and fail on a user's.
+          case "${{ runner.os }}" in
+            Linux)   ldd "$exe" 2>&1 | grep -i matc  && { echo "::error::links libmatc"; exit 1; } || true ;;
+            macOS)   otool -L "$exe" | grep -i matc  && { echo "::error::links libmatc"; exit 1; } || true ;;
+            Windows) ;;
+          esac
+          echo "ok"
+
+      - name: package
+        shell: bash
+        run: |
+          exe=$(find build -name 'matc' -type f -o -name 'matc.exe' -type f | head -1)
+          mkdir -p dist/matc-${{ matrix.target }}
+          cp "$exe" dist/matc-${{ matrix.target }}/
+          cp README.md LGPL-2.1 GPL-2 dist/matc-${{ matrix.target }}/
+          cd dist
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "matc-${{ matrix.target }}.zip" "matc-${{ matrix.target }}"
+          else
+            tar czf "matc-${{ matrix.target }}.tar.gz" "matc-${{ matrix.target }}"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matc-${{ matrix.target }}
+          path: dist/matc-*.*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: list what will be published
+        run: ls -lR dist
+
+      - name: attach to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: dist/**/matc-*.*

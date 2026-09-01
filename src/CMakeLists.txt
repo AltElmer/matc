@@ -9,7 +9,17 @@ set_source_files_properties(str.c PROPERTIES COMPILE_OPTIONS "-O0")
 endif()
 
 
-ADD_LIBRARY(matc SHARED ${matc_SRCS})
+# A self-contained executable for the release artifacts: the library is built
+# static and, where the platform allows it, the runtime is linked in too, so
+# the binary runs on a machine that has neither MATC nor a matching libc
+# installed. Off by default, since the Elmer build wants the shared library.
+OPTION(MATC_STATIC_CLI "Build a self-contained matc executable" OFF)
+
+IF(MATC_STATIC_CLI)
+  ADD_LIBRARY(matc STATIC ${matc_SRCS})
+ELSE()
+  ADD_LIBRARY(matc SHARED ${matc_SRCS})
+ENDIF()
 
 TARGET_LINK_LIBRARIES(matc m)
 
@@ -19,6 +29,17 @@ ENDIF()
 
 ADD_EXECUTABLE(Matc_bin main.c)
 TARGET_LINK_LIBRARIES(Matc_bin matc)
+
+IF(MATC_STATIC_CLI AND NOT APPLE AND NOT MSVC)
+  # Apple does not ship static system libraries, so -static cannot work there;
+  # a macOS binary linking only libSystem is portable across macOS versions
+  # anyway. MSVC uses /MT instead, set below.
+  SET_TARGET_PROPERTIES(Matc_bin PROPERTIES LINK_FLAGS "-static")
+ENDIF()
+IF(MATC_STATIC_CLI AND MSVC)
+  SET_PROPERTY(TARGET Matc_bin PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+  SET_PROPERTY(TARGET matc PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+ENDIF()
 
 SET_TARGET_PROPERTIES(Matc_bin PROPERTIES OUTPUT_NAME matc)
 IF(WIN32)
