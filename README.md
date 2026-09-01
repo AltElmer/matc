@@ -34,22 +34,25 @@ $ printf '2^10\nquit\n' | matc
 
 Note the default output format: `2^10` prints as `1.02e+03`, not `1024`. `format(n)` sets the number of digits, so `format(12)` before the same expression prints `1024`.
 
-Assignments are silent; an expression on its own prints its value.
+Assignments are silent; an expression on its own prints its value. Comments start with an exclamation mark.
+
+This block can be pasted into the interpreter as it stands:
 
 ```
-2^10
-  1.02e+03
-
+! comments start with an exclamation mark
 x = 3
-y = vector(0, 10, 1)      # 0 1 2 ... 10, as start, end, increment
+y = vector(0, 10, 1)   ! 0 1 2 ... 10, as start, end, increment
 A = zeros(2, 3)
 size(A)
-         2         3
-
 det(eye(3))
-         1
-
 sin(pi/4)
+```
+
+which prints, from the three expressions that are not assignments:
+
+```
+         2         3
+         1
      0.707
 ```
 
@@ -60,15 +63,14 @@ function sq(t)
 {
   _sq = t^2 + 1;
 }
-
 sq(4)
-        17
 ```
 
-`help` on its own lists the built-in functions. `help("name")`, with the quotes, describes one:
+prints `17`.
+
+`help` on its own lists the built-in functions. `help("name")`, with the quotes, describes one: `help("vector")` prints
 
 ```
-help("vector")
 r=vector(start,end,inc)
 Return vector of values going from start to end by inc.
 ```
