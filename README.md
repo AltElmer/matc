@@ -4,9 +4,17 @@ MATC is a small interpreter for numerical expressions and matrix arithmetic. It 
 
 This repository packages MATC on its own, as a library and a command line interpreter, for use outside Elmer and so that it can be developed and released independently.
 
+## Author
+
+MATC was written by **Juha Ruokolainen** at CSC - IT Center for Science Ltd., Espoo, Finland. His name is in the header of 21 of the 26 source files, dated 1995 and 1996, and he has looked after it ever since; his commits in this repository run to 2026. He has [described](https://github.com/ElmerCSC/elmerfem/issues/899#issuecomment-5505594747) the original as a two-week summer project, written as a first-year university student after reading the classic programming books of the time and using the very first version of Matlab at work.
+
+It has aged remarkably well. In about 10,800 lines of C it provides matrix arithmetic, control flow, user-defined functions and an interactive `help`, and getting it to build standalone under GCC, Clang, MSVC, clang-cl and mingw-w64 across Linux, macOS and Windows took two changes: selecting C99, and pointing two POSIX calls at `<io.h>` on MSVC. Thirty-year-old C rarely moves to compilers that did not exist when it was written, let alone for two changes. Peter Råback's [assessment](https://github.com/ElmerCSC/elmerfem/issues/899#issuecomment-5510862369) is that "MATC has had minimal number of issues over the years", and doing the port is what convinced me he is right.
+
+This repository exists to keep that work alive and buildable, not to replace it.
+
 ## Provenance
 
-MATC is part of Elmer, written at CSC - IT Center for Science Ltd., Finland, and licensed under the LGPL 2.1. This repository was extracted from [ElmerCSC/elmerfem](https://github.com/ElmerCSC/elmerfem) with `git filter-repo`, so the commit history of the `matc/` directory is preserved rather than starting from a squashed import. It is not an official CSC distribution.
+MATC is part of Elmer and is licensed under the LGPL 2.1. This repository was extracted from [ElmerCSC/elmerfem](https://github.com/ElmerCSC/elmerfem), and its history was then completed from Elmer's pre-GitHub Subversion repository on SourceForge, which the 2014 move to GitHub had squashed. The result reaches back to April 2005 with the original authorship intact rather than flattened into an import commit. It is not an official CSC distribution.
 
 ## Install
 
@@ -75,7 +83,7 @@ r=vector(start,end,inc)
 Return vector of values going from start to end by inc.
 ```
 
-The bundled reference in [`doc/`](doc/) documents the language in full: operators, control flow, the `import` and `export` statements for function scope, and the file, matrix and plotting builtins.
+Juha Ruokolainen's own reference manual documents the language in full: operators, control flow, the `import` and `export` statements for function scope, and the file, matrix and plotting builtins. It is published at [altelmer.github.io/matc](https://altelmer.github.io/matc/) and the source is in [`doc/`](doc/).
 
 ## Building
 
@@ -111,4 +119,4 @@ The CMake in this repository works both ways. When it is the top level project i
 
 ## Licence
 
-LGPL 2.1. See [`LGPL-2.1`](LGPL-2.1) and [`COPYING`](GPL-2). Copyright CSC - IT Center for Science Ltd., Finland.
+LGPL 2.1. See [`LGPL-2.1`](LGPL-2.1) and [`COPYING`](GPL-2). Copyright CSC - IT Center for Science Ltd., Finland. Written by Juha Ruokolainen; the per-file author and copyright headers are unchanged from the originals.
