@@ -34,6 +34,11 @@ jobs:
           - name: windows-x86_64 (mingw)
             os: windows-2022
             mingw: true
+          # Native arm64 Windows, on an arm64 runner with the arm64 MSVC, so
+          # this is a real build for the architecture rather than an x86_64
+          # binary running under emulation.
+          - name: windows-arm64 (msvc)
+            os: windows-11-arm
 
     steps:
       - uses: actions/checkout@v4

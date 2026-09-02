@@ -41,6 +41,12 @@ jobs:
           # redistributable installed.
           - target: windows-x86_64
             os: windows-2022
+          # Native arm64, built by the arm64 MSVC on an arm64 runner, rather
+          # than an x86_64 binary left to Windows' emulation. MSVC is the route
+          # here rather than MSYS2, which has no arm64 host toolchain of its
+          # own on these runners.
+          - target: windows-arm64
+            os: windows-11-arm
 
     steps:
       - uses: actions/checkout@v4
