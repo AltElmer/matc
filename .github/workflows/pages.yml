@@ -1,0 +1,66 @@
+name: pages
+
+# Publishes doc/ to GitHub Pages.
+#
+# The manual is LaTeX2HTML output that has been in the Elmer sources since the
+# 1990s. It is the only complete description of the language, and until now it
+# could only be read by cloning the repository and opening local files.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'doc/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # A project Pages site is served from a subpath, so a link to "/index.html"
+      # leaves the project entirely and lands on the organisation root. There
+      # was one, in kirja.html, pointing at the ElmerPost help index that used
+      # to sit above this manual. Checked rather than trusted, because it is
+      # the kind of thing that comes back with the next documentation import.
+      - name: no absolute links may escape the site
+        run: |
+          if grep -rniE '(href|src)="/' doc --include='*.html'; then
+            echo "::error::absolute link in doc/, it would escape the project Pages path"
+            exit 1
+          fi
+          echo "ok: no absolute links"
+
+      # A directory listing where an index is expected looks like a broken
+      # deploy, so make sure the entry point is real.
+      - name: the entry point must exist
+        run: |
+          test -f doc/index.html || { echo "::error::doc/index.html is missing"; exit 1; }
+          test -f doc/kirja.html || { echo "::error::doc/kirja.html is missing"; exit 1; }
+          echo "ok: index.html and kirja.html present"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: doc
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

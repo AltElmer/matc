@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MATC Matrix Language</title>
+<style>
+  :root {
+    --bg: #fbfaf8; --fg: #1c1b19; --muted: #5c5952;
+    --rule: #ddd8ce; --link: #1f5f8b; --card: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181c; --fg: #e6e3dd; --muted: #9b968c;
+      --rule: #2e3238; --link: #7cb7dd; --card: #1c1f24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.5rem 5rem; }
+  h1 { font-size: 2.1rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0 0 2.5rem; font-size: 1.05rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; letter-spacing: -.01em; }
+  a { color: var(--link); }
+  p { margin: 0 0 1rem; }
+  .cards { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .card {
+    display: block; padding: 1rem 1.15rem; background: var(--card);
+    border: 1px solid var(--rule); border-radius: 10px; text-decoration: none; color: inherit;
+  }
+  .card:hover { border-color: var(--link); }
+  .card b { display: block; color: var(--link); margin-bottom: .2rem; }
+  .card span { color: var(--muted); font-size: .9rem; }
+  pre {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 8px;
+    padding: .9rem 1.1rem; overflow-x: auto; font-size: .9rem;
+  }
+  footer { margin-top: 3.5rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>MATC Matrix Language</h1>
+<p class="sub">The matrix and expression language embedded in Elmer FEM, written by Juha Ruokolainen.</p>
+
+<p>MATC evaluates expressions, defines functions and manipulates matrices. Inside Elmer it is what makes a
+solver input file able to compute rather than only declare: a boundary condition can be written as an
+expression in the coordinates instead of a constant. It also runs on its own as a small interactive
+calculator.</p>
+
+<pre>$ matc
+MATC> a = 1:10
+MATC> sum(a)
+55
+MATC> f(x) = x^2 + 1
+MATC> f(3)
+10</pre>
+
+<h2>The manual</h2>
+<div class="cards">
+  <a class="card" href="kirja.html"><b>Read from the beginning</b><span>Contents, then the language in order</span></a>
+  <a class="card" href="node1.html"><b>MATC Variables</b><span>Start at the first chapter</span></a>
+  <a class="card" href="node5.html"><b>Operators and functions</b><span>The reference sections</span></a>
+</div>
+
+<p style="margin-top:1.25rem;color:var(--muted);font-size:.92rem">This manual is the original LaTeX2HTML
+output from the Elmer sources, published here unchanged apart from one link that pointed outside the
+document. It shows its age in places; it is also the only complete description of the language.</p>
+
+<h2>The program</h2>
+<div class="cards">
+  <a class="card" href="https://github.com/AltElmer/matc"><b>Source</b><span>github.com/AltElmer/matc</span></a>
+  <a class="card" href="https://github.com/AltElmer/matc/releases"><b>Binaries</b><span>Linux, macOS and Windows builds</span></a>
+</div>
+
+<footer>
+  Part of <a href="https://github.com/ElmerCSC/elmerfem">Elmer FEM</a>, developed at CSC &ndash; IT Center for
+  Science, Finland. LGPL. This is not an official CSC distribution.
+</footer>
+
+</div>
+</body>
+</html>
