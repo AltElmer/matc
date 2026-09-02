@@ -98,3 +98,50 @@ jobs:
         run: |
           exe=$(find build -name 'matc' -type f -o -name 'matc.exe' -type f | head -1)
           printf '6*7\nquit\n' | "$exe" | grep -q 42
+
+  # MATC's C99 requirement used to live only in its standalone block, so a
+  # project that added it with add_subdirectory inherited the parent's C
+  # standard and failed to build. Nothing tested that path, which is why it
+  # went unnoticed until ElmerFront consumed this repository as a submodule.
+  #
+  # The parent here deliberately asks for a standard MATC cannot be compiled
+  # with, so this job fails if the requirement ever stops travelling with the
+  # targets.
+  as-subdirectory:
+    name: consumed via add_subdirectory
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: matc
+
+      - name: a parent project that asks for a standard MATC cannot use
+        run: |
+          cat > CMakeLists.txt <<'EOF'
+          cmake_minimum_required(VERSION 3.12)
+          project(parent C)
+          set(CMAKE_C_STANDARD 23)
+          set(CMAKE_C_STANDARD_REQUIRED ON)
+          add_subdirectory(matc)
+          add_executable(consumer consumer.c)
+          target_link_libraries(consumer PRIVATE matc)
+          EOF
+          cat > consumer.c <<'EOF'
+          #include <stdio.h>
+          int main(void) { printf("linked against matc\n"); return 0; }
+          EOF
+
+      - name: configure, build, run
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          ./build/consumer
+
+      - name: the C99 requirement must have travelled with the target
+        run: |
+          std=$(grep -o '\-std=[a-z0-9]*' build/matc/src/CMakeFiles/matc.dir/flags.make | head -1)
+          echo "matc compiled with: ${std:-<none>}"
+          case "$std" in
+            -std=*99|-std=gnu99) echo "ok" ;;
+            *) echo "::error::matc was not compiled as C99; the target property did not travel"; exit 1 ;;
+          esac

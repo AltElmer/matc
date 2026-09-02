@@ -45,6 +45,22 @@ ENDIF()
 ADD_EXECUTABLE(Matc_bin main.c)
 TARGET_LINK_LIBRARIES(Matc_bin matc)
 
+# C99 as a property of the targets, not of the standalone build.
+#
+# com_init() takes a callback declared "VARIABLE *(*)()", meaning unspecified
+# arguments, and the functions handed to it genuinely have different
+# signatures. C23 redefines () as (void), so a compiler defaulting to it, such
+# as GCC 15, rejects every one of those calls as an incompatible pointer type.
+#
+# This used to be set as CMAKE_C_STANDARD inside the standalone block, which
+# meant it did not apply when MATC was added as a subdirectory: a consumer
+# inherited the parent's C standard and hit the exact failure the setting
+# exists to prevent. Found by consuming this repository as a submodule from
+# ElmerFront. Set on the targets so it travels with them however MATC is built.
+SET_TARGET_PROPERTIES(matc Matc_bin PROPERTIES
+  C_STANDARD 99
+  C_STANDARD_REQUIRED ON)
+
 IF(MATC_STATIC_CLI)
   IF(MSVC)
     # MSVC has no -static; the equivalent is linking the CRT statically.
